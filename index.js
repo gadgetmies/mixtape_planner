@@ -277,8 +277,23 @@ assert(isSuitableKey({keyNumber: 0, isMinor: true}, {keyNumber: 11, isMinor: fal
 assert(isSuitableKey({keyNumber: 0, isMinor: false}, {keyNumber: 11, isMinor: true}))
 
 const getKeyString = (keyNumber, isMinor) => `${keyNumber}${isMinor ? 'A' : 'B' }`
+const promiseOrTimeout = (fn, timeout) => {
+  let timeoutId
+  return Promise.race([
+    new Promise(accept => timeoutId = setTimeout(() => {
+      console.log('Timeout!')
+      return accept()
+    }, timeout)),
+    new Promise(async accept => {
+      const result = await fn()
+      console.log('Done')
+      clearTimeout(timeoutId)
+      accept(result)
+    })]
+  )
+}
 
-const graphWalk = ({tracks, intros, targetLength, penalties}) => {
+const graphWalk = async ({tracks, intros, targetLength, penalties}) => {
   const penaltyLookup = R.mapObjIndexed((_, key, ps) => ({
       weight: ps[key].weight,
       values: R.range(0, targetLength).map(i => ps[key].fn(i))
@@ -300,56 +315,67 @@ const graphWalk = ({tracks, intros, targetLength, penalties}) => {
   }
 
   const iterate = (node, tracksLeft) => {
-    const penalty = calculatePenalty(node.currentLength, node.track)
-    const currentPenalty = node.currentPenalty + penalty
-    const atTargetLength = node.currentLength === targetLength - 1
-    const suitableTracks = atTargetLength ? [] :
-      findSuitableTracks(node.track, tracksLeft).filter(t => calculatePenalty(node.currentLength + 1, t) < 0.3)
+    return new Promise(accept =>
+      setImmediate(async () => {
+        const penalty = calculatePenalty(node.currentLength, node.track)
+        const currentPenalty = node.currentPenalty + penalty
+        const atTargetLength = node.currentLength === targetLength - 1
+        const suitableTracks = atTargetLength ? [] :
+          findSuitableTracks(node.track, tracksLeft).filter(t => calculatePenalty(node.currentLength + 1, t) < 0.3)
 
-    if (atTargetLength) {
-      if (bestRoute.penalty === undefined || currentPenalty < bestRoute.penalty) {
-        let path = [node.track]
-        let currentNode = node
-        while (currentNode !== null) {
-          path.push(currentNode.track)
-          currentNode = currentNode.previous
+        if (atTargetLength) {
+          if (bestRoute.penalty === undefined || currentPenalty < bestRoute.penalty) {
+            let path = [node.track]
+            let currentNode = node
+            while (currentNode !== null) {
+              path.push(currentNode.track)
+              currentNode = currentNode.previous
+            }
+
+            bestRoute = {
+              penalty: currentPenalty,
+              path
+            }
+
+            console.log(`Found path with penalty: ${currentPenalty}`)
+          }
         }
 
-        bestRoute = {
-          penalty: currentPenalty,
-          path
+        if (atTargetLength || suitableTracks.length === 0 || (bestRoute.penalty !== undefined && node.currentPenalty > bestRoute.penalty)) {
+          return
         }
 
-        console.log(`Found path with penalty: ${currentPenalty}`)
-      }
-    }
+        await Promise.all(
+          suitableTracks.map(async (t, i) => {
+            if (node.currentLength === 0) {
+              console.log(`${Math.round(i / suitableTracks.length * 100)}%`)
+            }
+            return iterate({
+                previous: node,
+                track: t,
+                currentLength: node.currentLength + 1,
+                currentPenalty: node.currentPenalty + penalty
+              }, R.without([t], tracksLeft)
+            )
+          })
+        )
 
-    if (atTargetLength || suitableTracks.length === 0 || (bestRoute.penalty !== undefined && node.currentPenalty > bestRoute.penalty)) {
-      return
-    }
-
-    suitableTracks.forEach(async (t, i) => {
-      if (node.currentLength === 0) {
-        console.log(`${Math.round(i / suitableTracks.length * 100)}%`)
-      }
-      iterate({
-          previous: node,
-          track: t,
-          currentLength: node.currentLength + 1,
-          currentPenalty: node.currentPenalty + penalty
-        }, R.without([t], tracksLeft)
-      )
-    })
+        accept()
+      })
+    )
   }
 
   const graphStart = Date.now()
   for (const intro of intros) {
-    iterate({
-      previous: null,
-      track: intro,
-      currentLength: 0,
-      currentPenalty: 0
-    }, R.without([intro], tracks))
+    console.log(`Intro ${intros.indexOf(intro) + 1}:`)
+    await promiseOrTimeout(() => iterate({
+        previous: null,
+        track: intro,
+        currentLength: 0,
+        currentPenalty: 0
+      }, R.without([intro], tracks)),
+      60000
+    )
   }
 
   const graphTime = Date.now() - graphStart
@@ -430,7 +456,7 @@ const popularityFunction = n => (Math.sin(n) + 1) / 2
 
 // randomWalk({tracks, intros, targetLength: 20, energyFunction, popularityFunction})
 
-const paths = R.sortBy(R.prop('penalty'), graphWalk({
+graphWalk({
   tracks: tracks,
   intros: tracks.slice(0, 2),
   targetLength: 20,
@@ -444,21 +470,26 @@ const paths = R.sortBy(R.prop('penalty'), graphWalk({
       weight: 1
     }
   }
-}))
+})
+  .then(R.sortBy(R.prop('penalty')))
+  .then(paths => {
+    if (paths.length === 0) {
+      console.log('No suitable track orders exist')
+      process.exit(0)
+    }
 
-if (paths.length === 0) {
-  console.log('No suitable track orders exist')
-  process.exit(0)
-}
+    const bestPath = paths[0].path
+    const separator = '\t'
 
-const bestPath = paths[0].path
-const separator = '\t'
+    console.log('tracklist')
+    console.log(bestPath.map(({artist, title, keyNumber, isMinor}) => `${artist} - ${title} (${getKeyString(keyNumber, isMinor)})`).join('\n'))
+    console.log('energy')
+    console.log(bestPath.map((_, i) => energyFunction(i)).join(separator))
+    console.log(bestPath.map(R.prop('energy')).join((separator)))
+    console.log('popularity')
+    console.log(bestPath.map((_, i) => popularityFunction(i)).join(separator))
+    console.log(bestPath.map(R.prop('popularity')).join((separator)))
+    process.exit(0)
+  })
 
-console.log('tracklist')
-console.log(bestPath.map(({artist, title, keyNumber, isMinor}) => `${artist} - ${title} (${getKeyString(keyNumber, isMinor)})`).join('\n'))
-console.log('energy')
-console.log(bestPath.map((_, i) => energyFunction(i)).join(separator))
-console.log(bestPath.map(R.prop('energy')).join((separator)))
-console.log('popularity')
-console.log(bestPath.map((_, i) => popularityFunction(i)).join(separator))
-console.log(bestPath.map(R.prop('popularity')).join((separator)))
+
