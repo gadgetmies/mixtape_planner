@@ -236,19 +236,7 @@ const findSuitableTracks = (current, tracks) => {
   return tracks.filter(t => isSuitableKey(current, t))
 }
 
-const suitableKeys = ({keyNumber, isMinor}) => {
-  return [
-    getKeyString(keyNumber, isMinor), // current
-
-    getKeyString(keyNumber - 1, isMinor), // previous
-    (useConservativeKeyTransitions ? null : getKeyString(keyNumber - 1, !isMinor)),
-
-    getKeyString(keyNumber + 1, isMinor), // next
-    (useConservativeKeyTransitions ? null : getKeyString(keyNumber + 1, !isMinor))
-  ].filter(R.identity)
-}
-
-const penaltyFn = fn => (index, value) => Math.pow(fn(index) - value, 2)
+const penaltyFn = (ref, value) => Math.abs(ref - value)
 
 assert(isSuitableKey({keyNumber: 1, isMinor: true}, {keyNumber: 1, isMinor: false}))
 assert(isSuitableKey({keyNumber: 1, isMinor: false}, {keyNumber: 1, isMinor: true}))
@@ -289,54 +277,79 @@ assert(isSuitableKey({keyNumber: 0, isMinor: true}, {keyNumber: 11, isMinor: fal
 assert(isSuitableKey({keyNumber: 0, isMinor: false}, {keyNumber: 11, isMinor: true}))
 
 const getKeyString = (keyNumber, isMinor) => `${keyNumber}${isMinor ? 'A' : 'B' }`
-const groupByKeys = R.groupBy(({keyNumber, isMinor}) => getKeyString(keyNumber, isMinor))
 
-const graphWalk = ({tracksByKeys, intros, targetLength, penalties}) => {
+const graphWalk = ({tracks, intros, targetLength, penalties}) => {
+  const penaltyLookup = R.mapObjIndexed((_, key, ps) => ({
+      weight: ps[key].weight,
+      values: R.range(0, targetLength).map(i => ps[key].fn(i))
+    }),
+    penalties
+  )
+
   const calculatePenalty = (level, track) => {
-    const mapped = Object.keys(penalties).map(name => {
-      const {fn, weight} = penalties[name]
-      return weight * penaltyFn(fn)(level, track[name]);
+    const mapped = Object.keys(penaltyLookup).map(name => {
+      const penaltyObj = penaltyLookup[name]
+      return penaltyObj.weight * penaltyFn(penaltyObj.values[level], track[name])
     })
     return R.sum(mapped);
   }
 
-  const iterate = (length, current, tracksLeft) => {
-    const penalty = calculatePenalty(length, current)
-    const atTargetLength = length === targetLength
-    const suitableTracks = R.flatten(
-      suitableKeys(current).map(key => (tracksLeft[key] || []).filter(t => calculatePenalty(length + 1, t) < 0.2))
-    )
+  let lowestPenalty = undefined
+
+  const iterate = (currentLength, current, tracksLeft, pathPenalty) => {
+    const penalty = calculatePenalty(currentLength, current)
+    const currentPenalty = pathPenalty + penalty
+    const atTargetLength = currentLength === (targetLength - 1)
+    const suitableTracks = atTargetLength ? [] : findSuitableTracks(current, tracksLeft).filter(t => calculatePenalty(currentLength + 1, t) < 0.1)
+
+    if (atTargetLength) {
+      if (lowestPenalty === undefined || currentPenalty < lowestPenalty) {
+        lowestPenalty = currentPenalty
+        console.log(`Found path with penalty: ${currentPenalty}`)
+      }
+    }
+
+    if (lowestPenalty !== undefined && currentPenalty > lowestPenalty) {
+      console.log('Better order already found, aborting descent')
+    }
 
     return {
       penalty,
       track: current,
-      children: suitableTracks.length === 0 ? undefined : atTargetLength ? [] :
-        suitableTracks.map(t => iterate(length + 1, t, R.evolve({[getKeyString(t.keyNumber, t.isMinor)]: R.without([t])}, tracksLeft)))
+      children: atTargetLength ? [] :
+        suitableTracks.length === 0 || (lowestPenalty !== undefined && currentPenalty > lowestPenalty) ? undefined :
+          suitableTracks.map((t, i) => {
+            if (currentLength === 0) {
+              console.log(`${Math.round(i / suitableTracks.length * 100)}%`)
+            }
+            return iterate(currentLength + 1, t, R.without([t], tracksLeft), pathPenalty + penalty);
+          })
     }
   }
 
   const graphStart = Date.now()
   const graph = {
     penalty: 0,
-    children: intros.map(intro => iterate(0, intro, R.evolve({[getKeyString(intro)]: R.without([intro])}, tracksByKeys)))
+    children: intros.map((intro, i) => {
+      console.log(`Intro ${i + 1}:`)
+      return iterate(0, intro, R.without([intro], tracks), 0);
+    })
   }
   const graphTime = Date.now() - graphStart
 
-  const handle = (path, penalty, current) => {
-    const currentPath = R.append(current.track, path)
+  console.log('Graph done')
 
-    if (current.children === undefined) {
-      console.log('Dead end')
-    }
-    else {
+  const handle = (path, penalty, current) => {
+
+    const currentPath = R.append(current.track, path)
+    if (current.children !== undefined) {
       if (current.children.length === 0) {
         lists.push({path: currentPath, penalty})
-        console.log(currentPath.map(({artist, title, keyNumber, isMinor}) => `${artist} - ${title} (${getKeyString(keyNumber, isMinor)})`)
-          .join('\n'))
       } else {
         current.children.forEach(c => handle(currentPath, penalty + c.penalty, c))
       }
     }
+
   }
 
   const listStart = Date.now()
@@ -344,7 +357,7 @@ const graphWalk = ({tracksByKeys, intros, targetLength, penalties}) => {
   graph.children.forEach(c => handle([], c.penalty, c))
   const listTime = Date.now() - listStart
 
-  console.log(`Tracks: ${R.sum(Object.keys(tracksByKeys).map(k => tracksByKeys[k].length))}, Graph time: ${graphTime}, List time: ${listTime}, Permutations: ${lists.length}`)
+  console.log(`Tracks: ${tracks.length}, Graph time: ${graphTime}, List time: ${listTime}, Permutations: ${lists.length}`)
 
   return lists
 }
@@ -419,14 +432,10 @@ const popularityFunction = n => (Math.sin(n) + 1) / 2
 
 // randomWalk({tracks, intros, targetLength: 20, energyFunction, popularityFunction})
 
-// for (let i = 10; i < 50; i += 1) {
-//   graphWalk({tracks: tracks.slice(0, i), intros, targetLength: 10, energyFunction, popularityFunction})
-// }
-
-console.log(R.sortBy(R.prop('penalty'), graphWalk({
-  tracksByKeys: groupByKeys(tracks.slice(0, 80)),
+const paths = R.sortBy(R.prop('penalty'), graphWalk({
+  tracks: tracks,
   intros: tracks.slice(0, 2),
-  targetLength: 10,
+  targetLength: 20,
   penalties: {
     energy: {
       fn: energyFunction,
@@ -437,7 +446,21 @@ console.log(R.sortBy(R.prop('penalty'), graphWalk({
       weight: 1
     }
   }
-}))[0]
-  .path
-  .map(({artist, title, keyNumber, isMinor}) => `${artist} - ${title} (${getKeyString(keyNumber, isMinor)})`)
-  .join('\n'))
+}))
+
+if (paths.length === 0) {
+  console.log('No suitable track orders exist')
+  process.exit(0)
+}
+
+const bestPath = paths[0].path
+const separator = '\t'
+
+console.log('tracklist')
+console.log(bestPath.map(({artist, title, keyNumber, isMinor}) => `${artist} - ${title} (${getKeyString(keyNumber, isMinor)})`).join('\n'))
+console.log('energy')
+console.log(bestPath.map((_, i) => energyFunction(i)).join(separator))
+console.log(bestPath.map(R.prop('energy')).join((separator)))
+console.log('popularity')
+console.log(bestPath.map((_, i) => popularityFunction(i)).join(separator))
+console.log(bestPath.map(R.prop('popularity')).join((separator)))
