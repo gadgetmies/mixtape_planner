@@ -236,7 +236,7 @@ const findSuitableTracks = (current, tracks) => {
   return tracks.filter(t => isSuitableKey(current, t))
 }
 
-const penaltyFn = (ref, value) => Math.abs(ref - value)
+const penaltyFn = (ref, value) => Math.pow(ref - value, 2)
 
 assert(isSuitableKey({keyNumber: 1, isMinor: true}, {keyNumber: 1, isMinor: false}))
 assert(isSuitableKey({keyNumber: 1, isMinor: false}, {keyNumber: 1, isMinor: true}))
@@ -320,12 +320,12 @@ const graphWalk = async ({tracks, intros, targetLength, penalties}) => {
         const penalty = calculatePenalty(node.currentLength, node.track)
         const currentPenalty = node.currentPenalty + penalty
         const atTargetLength = node.currentLength === targetLength - 1
-        const suitableTracks = atTargetLength ? [] :
-          findSuitableTracks(node.track, tracksLeft).filter(t => calculatePenalty(node.currentLength + 1, t) < 0.3)
+        const suitableTracks = atTargetLength ? undefined :
+          findSuitableTracks(node.track, tracksLeft).filter(t => calculatePenalty(node.currentLength + 1, t) < 0.2)
 
         if (atTargetLength) {
           if (bestRoute.penalty === undefined || currentPenalty < bestRoute.penalty) {
-            let path = [node.track]
+            let path = []
             let currentNode = node
             while (currentNode !== null) {
               path.push(currentNode.track)
@@ -334,7 +334,7 @@ const graphWalk = async ({tracks, intros, targetLength, penalties}) => {
 
             bestRoute = {
               penalty: currentPenalty,
-              path
+              path: R.reverse(path)
             }
 
             console.log(`Found path with penalty: ${currentPenalty}`)
@@ -342,39 +342,40 @@ const graphWalk = async ({tracks, intros, targetLength, penalties}) => {
         }
 
         if (atTargetLength || suitableTracks.length === 0 || (bestRoute.penalty !== undefined && node.currentPenalty > bestRoute.penalty)) {
-          return
+          return accept()
         }
 
-        await Promise.all(
-          suitableTracks.map(async (t, i) => {
-            if (node.currentLength === 0) {
-              console.log(`${Math.round(i / suitableTracks.length * 100)}%`)
-            }
-            return iterate({
-                previous: node,
-                track: t,
-                currentLength: node.currentLength + 1,
-                currentPenalty: node.currentPenalty + penalty
-              }, R.without([t], tracksLeft)
-            )
-          })
-        )
+        let index = 0
+        for (const t of suitableTracks) {
+          if (node.currentLength === 0) {
+            console.log(`${Math.round(index/suitableTracks.length)}%`)
+            index++
+          }
 
-        accept()
+          await iterate({
+              previous: node,
+              track: t,
+              currentLength: node.currentLength + 1,
+              currentPenalty: node.currentPenalty + penalty
+            }, R.without([t], tracksLeft)
+          )
+        }
+
+        return accept()
       })
     )
   }
 
   const graphStart = Date.now()
   for (const intro of intros) {
-    console.log(`Intro ${intros.indexOf(intro) + 1}:`)
+    console.log(`Intro ${intros.indexOf(intro) + 1}: ${intro.artist} - ${intro.title}`)
     await promiseOrTimeout(() => iterate({
         previous: null,
         track: intro,
         currentLength: 0,
         currentPenalty: 0
       }, R.without([intro], tracks)),
-      60000
+      1 * 60 * 1000
     )
   }
 
@@ -457,7 +458,7 @@ const popularityFunction = n => (Math.sin(n) + 1) / 2
 // randomWalk({tracks, intros, targetLength: 20, energyFunction, popularityFunction})
 
 graphWalk({
-  tracks: tracks,
+  tracks,
   intros: tracks.slice(0, 2),
   targetLength: 20,
   penalties: {
