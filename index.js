@@ -291,75 +291,73 @@ const graphWalk = ({tracks, intros, targetLength, penalties}) => {
       const penaltyObj = penaltyLookup[name]
       return penaltyObj.weight * penaltyFn(penaltyObj.values[level], track[name])
     })
-    return R.sum(mapped);
+    return R.sum(mapped)
   }
 
-  let lowestPenalty = undefined
+  let bestRoute = {
+    path: [],
+    penalty: undefined
+  }
 
-  const iterate = (currentLength, current, tracksLeft, pathPenalty) => {
-    const penalty = calculatePenalty(currentLength, current)
-    const currentPenalty = pathPenalty + penalty
-    const atTargetLength = currentLength === (targetLength - 1)
-    const suitableTracks = atTargetLength ? [] : findSuitableTracks(current, tracksLeft).filter(t => calculatePenalty(currentLength + 1, t) < 0.1)
+  const iterate = (node, tracksLeft) => {
+    const penalty = calculatePenalty(node.currentLength, node.track)
+    const currentPenalty = node.currentPenalty + penalty
+    const atTargetLength = node.currentLength === targetLength - 1
+    const suitableTracks = atTargetLength ? [] :
+      findSuitableTracks(node.track, tracksLeft).filter(t => calculatePenalty(node.currentLength + 1, t) < 0.3)
 
     if (atTargetLength) {
-      if (lowestPenalty === undefined || currentPenalty < lowestPenalty) {
-        lowestPenalty = currentPenalty
+      if (bestRoute.penalty === undefined || currentPenalty < bestRoute.penalty) {
+        let path = [node.track]
+        let currentNode = node
+        while (currentNode !== null) {
+          path.push(currentNode.track)
+          currentNode = currentNode.previous
+        }
+
+        bestRoute = {
+          penalty: currentPenalty,
+          path
+        }
+
         console.log(`Found path with penalty: ${currentPenalty}`)
       }
     }
 
-    if (lowestPenalty !== undefined && currentPenalty > lowestPenalty) {
-      console.log('Better order already found, aborting descent')
+    if (atTargetLength || suitableTracks.length === 0 || (bestRoute.penalty !== undefined && node.currentPenalty > bestRoute.penalty)) {
+      return
     }
 
-    return {
-      penalty,
-      track: current,
-      children: atTargetLength ? [] :
-        suitableTracks.length === 0 || (lowestPenalty !== undefined && currentPenalty > lowestPenalty) ? undefined :
-          suitableTracks.map((t, i) => {
-            if (currentLength === 0) {
-              console.log(`${Math.round(i / suitableTracks.length * 100)}%`)
-            }
-            return iterate(currentLength + 1, t, R.without([t], tracksLeft), pathPenalty + penalty);
-          })
-    }
+    suitableTracks.forEach(async (t, i) => {
+      if (node.currentLength === 0) {
+        console.log(`${Math.round(i / suitableTracks.length * 100)}%`)
+      }
+      iterate({
+          previous: node,
+          track: t,
+          currentLength: node.currentLength + 1,
+          currentPenalty: node.currentPenalty + penalty
+        }, R.without([t], tracksLeft)
+      )
+    })
   }
 
   const graphStart = Date.now()
-  const graph = {
-    penalty: 0,
-    children: intros.map((intro, i) => {
-      console.log(`Intro ${i + 1}:`)
-      return iterate(0, intro, R.without([intro], tracks), 0);
-    })
+  for (const intro of intros) {
+    iterate({
+      previous: null,
+      track: intro,
+      currentLength: 0,
+      currentPenalty: 0
+    }, R.without([intro], tracks))
   }
+
   const graphTime = Date.now() - graphStart
 
   console.log('Graph done')
+  console.log(`Tracks: ${tracks.length}, Graph time: ${graphTime}`)
 
-  const handle = (path, penalty, current) => {
-
-    const currentPath = R.append(current.track, path)
-    if (current.children !== undefined) {
-      if (current.children.length === 0) {
-        lists.push({path: currentPath, penalty})
-      } else {
-        current.children.forEach(c => handle(currentPath, penalty + c.penalty, c))
-      }
-    }
-
-  }
-
-  const listStart = Date.now()
-  const lists = []
-  graph.children.forEach(c => handle([], c.penalty, c))
-  const listTime = Date.now() - listStart
-
-  console.log(`Tracks: ${tracks.length}, Graph time: ${graphTime}, List time: ${listTime}, Permutations: ${lists.length}`)
-
-  return lists
+  return [bestRoute]
 }
 
 const randomWalk = ({tracks, intros, targetLength, energyFunction, popularityFunction}) => {
