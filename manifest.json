@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Mixtape Planner",
+  "name": "Mixtape Tracklist Planner",
   "icons": [
     {
       "src": "favicon.ico",
