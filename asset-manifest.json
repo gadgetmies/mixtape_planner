@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/mixtape_planner/static/css/main.aa2559c7.chunk.css",
-    "main.js": "/mixtape_planner/static/js/main.6caa3566.chunk.js",
-    "main.js.map": "/mixtape_planner/static/js/main.6caa3566.chunk.js.map",
+    "main.js": "/mixtape_planner/static/js/main.e04f1b2a.chunk.js",
+    "main.js.map": "/mixtape_planner/static/js/main.e04f1b2a.chunk.js.map",
     "runtime-main.js": "/mixtape_planner/static/js/runtime-main.2526f8a4.js",
     "runtime-main.js.map": "/mixtape_planner/static/js/runtime-main.2526f8a4.js.map",
     "static/js/2.2f6b23d5.chunk.js": "/mixtape_planner/static/js/2.2f6b23d5.chunk.js",
@@ -17,6 +17,6 @@
     "static/js/runtime-main.2526f8a4.js",
     "static/js/2.2f6b23d5.chunk.js",
     "static/css/main.aa2559c7.chunk.css",
-    "static/js/main.6caa3566.chunk.js"
+    "static/js/main.e04f1b2a.chunk.js"
   ]
 }
