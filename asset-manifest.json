@@ -1,22 +1,22 @@
 {
   "files": {
     "main.css": "/mixtape_planner/static/css/main.aa2559c7.chunk.css",
-    "main.js": "/mixtape_planner/static/js/main.becb00f1.chunk.js",
-    "main.js.map": "/mixtape_planner/static/js/main.becb00f1.chunk.js.map",
+    "main.js": "/mixtape_planner/static/js/main.6332f950.chunk.js",
+    "main.js.map": "/mixtape_planner/static/js/main.6332f950.chunk.js.map",
     "runtime-main.js": "/mixtape_planner/static/js/runtime-main.7c3731ea.js",
     "runtime-main.js.map": "/mixtape_planner/static/js/runtime-main.7c3731ea.js.map",
-    "static/js/2.19a0d519.chunk.js": "/mixtape_planner/static/js/2.19a0d519.chunk.js",
-    "static/js/2.19a0d519.chunk.js.map": "/mixtape_planner/static/js/2.19a0d519.chunk.js.map",
+    "static/js/2.ae176fac.chunk.js": "/mixtape_planner/static/js/2.ae176fac.chunk.js",
+    "static/js/2.ae176fac.chunk.js.map": "/mixtape_planner/static/js/2.ae176fac.chunk.js.map",
     "static/js/3.91fe7da9.chunk.js": "/mixtape_planner/static/js/3.91fe7da9.chunk.js",
     "static/js/3.91fe7da9.chunk.js.map": "/mixtape_planner/static/js/3.91fe7da9.chunk.js.map",
     "index.html": "/mixtape_planner/index.html",
     "static/css/main.aa2559c7.chunk.css.map": "/mixtape_planner/static/css/main.aa2559c7.chunk.css.map",
-    "static/js/2.19a0d519.chunk.js.LICENSE.txt": "/mixtape_planner/static/js/2.19a0d519.chunk.js.LICENSE.txt"
+    "static/js/2.ae176fac.chunk.js.LICENSE.txt": "/mixtape_planner/static/js/2.ae176fac.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.7c3731ea.js",
-    "static/js/2.19a0d519.chunk.js",
+    "static/js/2.ae176fac.chunk.js",
     "static/css/main.aa2559c7.chunk.css",
-    "static/js/main.becb00f1.chunk.js"
+    "static/js/main.6332f950.chunk.js"
   ]
 }
