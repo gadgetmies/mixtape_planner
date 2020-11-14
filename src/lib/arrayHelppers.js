@@ -5,7 +5,7 @@ export const limits = values => ({
   max: R.apply(Math.max, values)
 })
 
-export const normalize = (newMin, newMax) => values => {
-  const { min: oldMin, max: oldMax } = limits(values)
+export const normalize = (newMin, newMax, range = undefined) => values => {
+  const { min: oldMin, max: oldMax } = range || limits(values)
   return values.map(oldValue => (((oldValue - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin)
 }

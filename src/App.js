@@ -2,146 +2,406 @@ import './App.css'
 import React, { useState } from 'react'
 import Chart from 'react-apexcharts'
 import * as R from 'ramda'
-import { Button } from '@material-ui/core'
+import { Button, ButtonGroup } from '@material-ui/core'
 
 import defaultTracklist from './test/tracklist.js'
 import Tracklist from './Tracklist'
-import parseTracklist from './lib/parseTracklist.js'
+import parsePlaylist from './lib/parseTracklist.js'
 import { graphWalk } from './lib/graphWalk.js'
-import { saw } from './lib/penalties.js'
+import { absoluteSine, saw } from './lib/penalties.js'
 import { limits, normalize } from './lib/arrayHelppers'
+
 import TextField from '@material-ui/core/TextField'
 import Container from '@material-ui/core/Container'
+import Slider from '@material-ui/core/Slider'
+import Select from '@material-ui/core/Select'
+import MenuItem from '@material-ui/core/MenuItem'
+import CircularProgress from '@material-ui/core/CircularProgress'
+import Input from '@material-ui/core/Input'
+import GithubCorner from 'react-github-corner'
+
+import { raisingSaw } from './lib/penalties'
+import Link from '@material-ui/core/Link'
 
 function App() {
   const [tracklist, setTracklist] = useState(defaultTracklist)
-  const [tracks, setTracks] = useState(parseTracklist(tracklist))
-  const [path, setPath] = useState([])
-  const [energy, setEnergy] = useState([])
+  const [tracks, setTracks] = useState(parsePlaylist(tracklist))
+  const [paths, setPaths] = useState([])
+  const [selectedPath, setSelectedPath] = useState(undefined)
   const [targetLength, setTargetLength] = useState(20)
-  let energyFunction = saw(6)
-  const [energyTarget, setEnergyTarget] = useState([])
+  const [timeout, setTimeout] = useState(2)
+  const [tolerance, setTolerance] = useState(1.5)
   const [processing, setProcessing] = useState(false)
-  const [editing, setEditing] = useState(true)
+  const [editingPlaylist, setEditingPlaylist] = useState(true)
+  const [editingIntro, setEditingIntro] = useState(false)
+  const [editingOutro, setEditingOutro] = useState(false)
+  const [intro, setIntro] = useState(tracks[0])
+  const [outro, setOutro] = useState(R.last(tracks))
+  const [parametersChanged, setParametersChanged] = useState(true)
+  const [seed, setSeed] = useState(0)
+  const [targetValues, setTargetValues] = useState(
+    [8, 8, 9, 9, 2, 3, 6, 9, 10, 5, 6, 7, 10, 10, 6, 7, 8, 9, 10, 10].map((value) => ({ value }))
+  )
+  const [processingMessage, setProcessingMessage] = useState('')
+
+  const targetFunctions = [
+    {
+      name: 'Raising Saw',
+      fn: raisingSaw(7, targetLength),
+    },
+    {
+      name: 'Saw',
+      fn: saw(7),
+    },
+    {
+      name: 'Absolute sine',
+      fn: absoluteSine,
+    },
+    {
+      name: 'Manual',
+      fn: (i) => targetValues[i].value,
+    },
+  ]
+  const [targetFn, setTargetFn] = useState(targetFunctions[0])
+
+  const firstProperty = (track) => R.path([0], Object.entries(track.properties))
+  const firstPropertyName = (track) => R.path([0], firstProperty(track))
+  const firstPropertyValue = (track) => R.path([1], firstProperty(track))
+  const parameterRange = limits(R.map(firstPropertyValue, tracks))
+  const getTargetValues = ({ min, max }, targetLength, fn) => {
+    return normalize(min, max)(R.range(0, targetLength).map((i) => fn(i)))
+  }
+  const [cachedTargetValues, setCachedTargetValues] = useState(
+    getTargetValues(parameterRange, targetLength, targetFn.fn)
+  )
 
   return (
-    <Container maxWidth="m">
+    <Container maxWidth="md">
       <h1>Mixtape planner</h1>
       <p>
-        A tool for generating a mixtape tracklist where all transitions are in key. Start by copying a playlist exported
-        from Traktor as a web page and pasting it to the box below. The first track will be used as the intro track.
+        A tool for generating a mixtape tracklist where transitions are in key. Start by copying a playlist exported
+        from Traktor as a web page and pasting it to the box below.
       </p>
-      <p>
-        Please note that the algorithm will currently always return the same output for a given input. If you want
-        another order as output, you can try to rearrange the tracks in the playlist. The algorithm will also probably
-        find a couple of possible tracklist orders, but the UI currently only shows the best ranked one.
-      </p>
-      <h2>Playlist</h2>
-      <p>
-        {editing ? (
-          <>
-            <p>
-              <TextField
-                fullWidth={true}
-                rowsMax={20}
-                multiline
-                onChange={(e) => {
-                  setTracklist(e.target.value)
-                }}
-                value={tracklist}
-              />
-            </p>
-            <p>
-              <Button
-                disabled={processing}
-                onClick={() => {
-                  setEditing(false)
-                  setTracks(parseTracklist(tracklist))
-                }}
-                color="primary"
-                variant="contained"
-              >
-                Parse tracklist
-              </Button>
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              <Tracklist tracks={tracks} />
-            </p>
-            <p>
-              <Button disabled={processing} onClick={() => setEditing(true)} color="primary" variant="contained">
-                Edit playlist
-              </Button>
-            </p>
-          </>
-        )}
-      </p>
-      <p>
+      <h2>Parameters</h2>
+      <h3>
+        Playlist{' '}
         <Button
+          size="small"
+          disabled={processing}
+          onClick={() => {
+            if (editingPlaylist) {
+              setEditingPlaylist(false)
+              const parsedPlaylist = parsePlaylist(tracklist)
+              setTracks(parsedPlaylist)
+              setParametersChanged(true)
+              setIntro(parsedPlaylist.find(R.equals(intro)))
+              setOutro(parsedPlaylist.find(R.equals(outro)))
+            } else {
+              setEditingPlaylist(true)
+            }
+          }}
           color="primary"
           variant="contained"
-          disabled={processing || editing}
-          onClick={async () => {
-            setProcessing(true)
-            setEnergyTarget([])
-            setEnergy([])
-            setPath([])
-            const paths = await graphWalk({
-              tracks,
-              intros: tracks.slice(0, 1),
-              targetLength,
-              penalties: { energy: { weight: 1, fn: energyFunction } },
-            })
-
-            const bestPath = paths[0].path
-
-            const energyRange = limits(R.map(R.path(['properties', 'energy']), bestPath))
-            const getEnergyTarget = ({ min, max }) =>
-              normalize(min, max)(R.range(0, targetLength).map((i) => energyFunction(i)))
-            setEnergyTarget(getEnergyTarget(energyRange))
-            setEnergy(bestPath.map(R.path(['properties', 'energy'])))
-            setPath(bestPath)
-            setProcessing(false)
-          }}
         >
-          {processing && !editing ? 'Calculating...' : 'Calculate order'}
+          {editingPlaylist ? 'Parse' : 'Import / Edit'}
         </Button>
-      </p>
-      {path.length !== 0 ? (
+      </h3>
+      {editingPlaylist ? (
         <>
-          <h2>Generated tracklist</h2>
           <p>
-            <Tracklist tracks={path} />
+            <TextField
+              fullWidth={true}
+              rowsMax={20}
+              multiline
+              onChange={(e) => {
+                setTracklist(e.target.value)
+              }}
+              value={tracklist}
+            />
           </p>
-          <h2>Correlation with property function</h2>
+        </>
+      ) : (
+        <>
+          <h4>
+            Intro{' '}
+            <Button
+              disabled={processing}
+              size="small"
+              color="primary"
+              variant="contained"
+              onClick={() => setEditingIntro(!editingIntro)}
+            >
+              {editingIntro ? 'Done' : 'Edit'}
+            </Button>
+          </h4>
+          <Tracklist
+            tracks={editingIntro ? tracks : [intro].filter(R.identity)}
+            key="intro"
+            editing={editingIntro}
+            disabled={processing}
+            onTrackSelected={(i) => {
+              setIntro(tracks[i])
+              setParametersChanged(true)
+            }}
+            selectedTrackIndex={tracks.findIndex(R.equals(intro))}
+          />
+          <h4>
+            Outro{' '}
+            <Button
+              disabled={processing}
+              size="small"
+              color="primary"
+              variant="contained"
+              onClick={() => setEditingOutro(!editingOutro)}
+            >
+              {editingOutro ? 'Done' : 'Edit'}
+            </Button>
+          </h4>
+          <Tracklist
+            tracks={editingOutro ? tracks : [outro].filter(R.identity)}
+            key="outro"
+            editing={editingOutro}
+            disabled={processing}
+            onTrackSelected={(i) => {
+              setOutro(tracks[i])
+              setParametersChanged(true)
+            }}
+            selectedTrackIndex={tracks.findIndex(R.equals(outro))}
+          />
+          <h4>Rest</h4>
+          <Tracklist tracks={R.without([intro, outro], tracks)} key="middle" />
+        </>
+      )}
+      {editingPlaylist ? null : (
+        <>
+          <h3>Mixtape length</h3>
           <p>
+            <Slider
+              min={3}
+              max={30}
+              valueLabelDisplay="on"
+              value={targetLength}
+              disabled={processing}
+              onChange={(_, value) => {
+                setTargetLength(value)
+                setParametersChanged(true)
+              }}
+            />
+          </p>
+          <h3>Processing timeout (minutes)</h3>
+          <p>
+            <Slider
+              min={0.5}
+              max={5}
+              step={0.1}
+              valueLabelDisplay="on"
+              value={timeout}
+              disabled={processing}
+              onChange={(_, value) => {
+                setTimeout(value)
+                setParametersChanged(true)
+              }}
+            />
+          </p>
+          <h3>Target curve</h3>
+          <p>
+            <Select
+              value={targetFn.name}
+              disabled={processing}
+              onChange={(e) => {
+                setTargetFn(targetFunctions.find(R.propEq('name', e.target.value)))
+                setParametersChanged(true)
+              }}
+            >
+              {targetFunctions.map(({ name }) => (
+                <MenuItem value={name} key={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+            {targetFn.name === 'Manual' ? (
+              <>
+                <h4>Values</h4>
+                {R.range(0, targetLength).map((i) => (
+                  <>
+                    {i !== 0 && i % 10 === 0 ? <br /> : null}
+                    <TextField
+                      size="small"
+                      variant="outlined"
+                      style={{ width: 60, marginBottom: 10 }}
+                      label={(i + 1).toString()}
+                      key={i}
+                      value={targetValues[i].value}
+                      onChange={(e) => {
+                        targetValues[i].value = R.clamp(0, 10, parseInt(e.target.value) || 0)
+                        setTargetValues([...targetValues])
+                        setParametersChanged(true)
+                      }}
+                    />
+                  </>
+                ))}
+              </>
+            ) : null}
             <Chart
               options={{
                 chart: {
                   id: 'apexchart-example',
                 },
                 xaxis: {
-                  categories: R.range(1, targetLength),
+                  categories: R.range(1, targetLength + 1),
                 },
               }}
               series={[
                 {
-                  name: 'energy',
-                  data: energy.map(Math.round),
-                },
-                {
                   name: 'energy target',
-                  data: energyTarget.map(Math.round),
+                  data: getTargetValues(parameterRange, targetLength, targetFn.fn),
                 },
               ]}
-              width="500"
-              height="320"
+              height="200"
             />
           </p>
+          <h4>Tolerance</h4>
+          <p>
+            <Slider
+              min={0.0}
+              max={3.0}
+              step={0.1}
+              valueLabelDisplay="on"
+              value={tolerance}
+              disabled={processing}
+              onChange={(_, value) => {
+                setTolerance(Number(value))
+                setParametersChanged(true)
+              }}
+            />
+          </p>
+          <h4>Seed</h4>
+          <p>
+            <Input
+              size="small"
+              value={seed}
+              disabled={processing}
+              onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
+            />
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              disabled={processing}
+              onClick={() => {
+                setSeed(Math.round(Math.random() * 1000000))
+                setParametersChanged(true)
+              }}
+            >
+              Generate seed
+            </Button>
+          </p>
+          <h2 id="result">Result</h2>
+          <p>
+            <Button
+              color="primary"
+              variant="contained"
+              disabled={!parametersChanged || processing || editingPlaylist}
+              onClick={async () => {
+                setProcessing(true)
+                setPaths([])
+                setProcessingMessage('')
+
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'end' })
+
+                const paths = await graphWalk({
+                  tracks,
+                  intro,
+                  outro,
+                  targetLength,
+                  tolerance,
+                  timeout,
+                  seed,
+                  penalties: { [firstPropertyName(tracks[0])]: { weight: 1, fn: targetFn.fn } },
+                })
+
+                setCachedTargetValues(getTargetValues(parameterRange, targetLength, targetFn.fn))
+                setParametersChanged(false)
+                setPaths(paths)
+                setSelectedPath(paths[0])
+                setProcessing(false)
+
+                setProcessingMessage(
+                  paths.length === 0 ? 'No suitable orders found. Try increasing processing timeout or tolerance' : ''
+                )
+              }}
+            >
+              Generate order
+            </Button>
+          </p>
+          {processingMessage ? <p>{processingMessage}</p> : null}
+          {processing ? (
+            <>
+              <p>Calculating...</p>
+              <CircularProgress />
+            </>
+          ) : null}
+          <div style={{ minHeight: 100 }}>
+            {!processing && paths.length !== 0 ? (
+              <>
+                <ButtonGroup color="primary" variant="contained">
+                  {paths.map((path, i) => (
+                    <Button
+                      color={path === selectedPath ? 'secondary' : 'primary'}
+                      onClick={() => setSelectedPath(path)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                </ButtonGroup>
+                <h3>Tracklist</h3>
+                <Tracklist tracks={selectedPath.path} />
+                <h3>Correlation with target curve ({Math.round(selectedPath.penalty * 100) / 100})</h3>
+                <Chart
+                  options={{
+                    chart: {
+                      id: 'apexchart-example',
+                    },
+                    xaxis: {
+                      categories: R.range(1, targetLength + 1),
+                    },
+                  }}
+                  series={[
+                    {
+                      name: 'Value',
+                      data: selectedPath.path.map(firstPropertyValue),
+                    },
+                    {
+                      name: 'Target',
+                      data: cachedTargetValues,
+                    },
+                  ]}
+                  height="200"
+                />
+                <h3>Keys</h3>
+                <Chart
+                  options={{
+                    chart: {
+                      id: 'apexchart-example',
+                    },
+                    xaxis: {
+                      categories: R.range(1, targetLength + 1),
+                    },
+                  }}
+                  series={[
+                    {
+                      name: 'key',
+                      data: selectedPath.path.map(R.prop('keyNumber')),
+                    },
+                  ]}
+                  height="200"
+                />
+              </>
+            ) : null}
+          </div>
         </>
-      ) : null}
+      )}
+      <GithubCorner href="https://github.com/gadgetmies/mixtape_planner" target="_blank" />
     </Container>
   )
 }

@@ -8,47 +8,50 @@ import Paper from '@material-ui/core/Paper'
 
 import { getKeyString } from './lib/keys'
 import makeStyles from '@material-ui/core/styles/makeStyles'
+import Radio from '@material-ui/core/Radio'
 
 const useStyles = makeStyles({
   root: {
     width: '100%',
   },
   container: {
-    maxHeight: 440,
+    maxHeight: 400,
   },
 })
 
-export default function Tracklist({ tracks }) {
+export default function Tracklist({ tracks, editing, selectedTrackIndex, onTrackSelected }) {
   const classes = useStyles()
 
   return (
     <Paper className={classes.root}>
       <TableContainer className={classes.container}>
-        <Table stickyHeader className="tracks">
+        <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Intro?</TableCell>
+              {editing ? <TableCell>Select</TableCell> : null}
               <TableCell>Artist</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Key</TableCell>
               {tracks[0]
-                ? Object.keys(tracks[0].properties).map((propertyName) => (
-                    <TableCell>{propertyName.replace(/^./, propertyName[0].toUpperCase())}</TableCell>
+                ? Object.keys(tracks[0].properties).map((propertyName, i) => (
+                    <TableCell key={i}>{propertyName.replace(/^./, propertyName[0].toUpperCase())}</TableCell>
                   ))
                 : null}
             </TableRow>
           </TableHead>
           <TableBody>
             {tracks.map((track, i) => (
-              <TableRow>
-                <TableCell>
-                  <input type="checkbox" data-intro-track-id={i} />
-                </TableCell>
+              <TableRow key={i}>
+                {editing ? (
+                  <TableCell key="select">
+                    <Radio checked={selectedTrackIndex === i} onChange={() => onTrackSelected(i)} />
+                  </TableCell>
+                ) : null}
                 <TableCell>{track.artist}</TableCell>
                 <TableCell>{track.title}</TableCell>
                 <TableCell>{getKeyString(track.keyNumber, track.isMinor)}</TableCell>
                 {Object.values(track.properties).map((property) => (
-                  <TableCell>{property}</TableCell>
+                  <TableCell key="property">{property}</TableCell>
                 ))}
               </TableRow>
             ))}

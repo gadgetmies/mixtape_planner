@@ -13,7 +13,7 @@ export default tracklist => {
   assert(headers[1] === 'Title')
   assert(headers[2] === 'Key')
 
-  const propertyNames = headers.slice(3).map(p => p.toLowerCase())
+  const propertyNames = headers.slice(3)
 
   return validRows
     .slice(1)
@@ -24,7 +24,7 @@ export default tracklist => {
           artist,
           keyNumber: parseInt(key.slice(0, -1)),
           isMinor: key[key.length - 1] === 'A',
-          properties: Object.fromEntries(propertyValues.map((value, i) => [propertyNames[i], value]))
+          properties: Object.fromEntries(propertyValues.map((value, i) => [propertyNames[i], value.match(/(\d+)$/)[1]]))
         }
       } catch (e) {
         console.error(`Error processing row: ${title} ${artist} ${key} ${propertyValues}`)

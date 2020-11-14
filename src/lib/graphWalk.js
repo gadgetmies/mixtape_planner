@@ -1,11 +1,12 @@
 import * as R from 'ramda'
 
 import { limits, normalize } from './arrayHelppers'
-import { findSuitableTracks } from './keys'
+import { findSuitableTracks, keyDistance } from './keys'
 import { promiseOrTimeout } from './promiseHelpers'
 import { penaltyFn } from './penalties'
+import * as seedrandom from 'seedrandom'
 
-export const graphWalk = async ({ tracks, intros, targetLength, penalties, timeout = 30 * 1000}) => {
+export const graphWalk = async ({ tracks, intro, outro, targetLength, penalties, tolerance, seed, timeout = 0.5 }) => {
   const minAndMaxValuesForPenalties = Object.fromEntries(
     Object.keys(penalties).map((key) => {
       const values = R.map(R.path(['properties', key]), tracks)
@@ -30,20 +31,23 @@ export const graphWalk = async ({ tracks, intros, targetLength, penalties, timeo
     return R.sum(mapped)
   }
 
+  let routes = []
   let bestRoute = {
     path: [],
     penalty: Infinity,
   }
 
-  const iterate = (node, tracksLeft) => {
+  const iterate = (node, outro, tracksLeft) => {
     return new Promise((accept) =>
       setImmediate(async () => {
         const penalty = calculatePenalty(node.currentLength, node.track)
         const currentPenalty = node.currentPenalty + penalty
-        const atTargetLength = node.currentLength === targetLength - 1
+        const atTargetLength = node.currentLength === targetLength - 2
         const suitableTracks = atTargetLength
           ? undefined
-          : findSuitableTracks(node.track, tracksLeft).filter((t) => calculatePenalty(node.currentLength + 1, t) < 1)
+          : findSuitableTracks(node.track, tracksLeft).filter(
+              (t) => calculatePenalty(node.currentLength + 1, t) < tolerance
+            )
 
         if (atTargetLength) {
           if (currentPenalty < bestRoute.penalty) {
@@ -56,14 +60,23 @@ export const graphWalk = async ({ tracks, intros, targetLength, penalties, timeo
 
             bestRoute = {
               penalty: currentPenalty,
-              path: R.reverse(path),
+              path: [...R.reverse(path), outro],
             }
+
+            routes.splice(0, 0, bestRoute)
 
             console.log(`Found path with penalty: ${currentPenalty}`)
           }
         }
 
-        if (atTargetLength || suitableTracks.length === 0 || node.currentPenalty > bestRoute.penalty) {
+        const tooFarFromOutro = keyDistance(false)(node.track, outro) > targetLength - node.currentLength - 3
+
+        if (
+          tooFarFromOutro ||
+          atTargetLength ||
+          suitableTracks.length === 0 ||
+          node.currentPenalty > bestRoute.penalty
+        ) {
           return accept()
         }
 
@@ -81,6 +94,7 @@ export const graphWalk = async ({ tracks, intros, targetLength, penalties, timeo
               currentLength: node.currentLength + 1,
               currentPenalty: node.currentPenalty + penalty,
             },
+            outro,
             R.without([t], tracksLeft)
           )
         }
@@ -91,27 +105,26 @@ export const graphWalk = async ({ tracks, intros, targetLength, penalties, timeo
   }
 
   const graphStart = Date.now()
-  for (const intro of intros) {
-    console.log(`Intro ${intros.indexOf(intro) + 1}: ${intro.artist} - ${intro.title}`)
-    await promiseOrTimeout(
-      () =>
-        iterate(
-          {
-            previous: null,
-            track: intro,
-            currentLength: 0,
-            currentPenalty: 0,
-          },
-          R.without([intro], tracks)
-        ),
-      timeout
-    )
-  }
+
+  await promiseOrTimeout(
+    () =>
+      iterate(
+        {
+          previous: null,
+          track: intro,
+          currentLength: 0,
+          currentPenalty: 0,
+        },
+        outro,
+        R.without([intro, outro], tracks).sort(() => seedrandom(seed) - 0.5)
+      ),
+    timeout * 60 * 1000
+  )
 
   const graphTime = Date.now() - graphStart
 
   console.log('Graph done')
   console.log(`Tracks: ${tracks.length}, Graph time: ${graphTime}`)
 
-  return [bestRoute]
+  return routes
 }
