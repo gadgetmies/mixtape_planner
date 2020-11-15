@@ -11,7 +11,7 @@ export default tracklist => {
   const validRows = rows.filter(r => r.length === headers.length)
   assert(headers[0] === 'Artist')
   assert(headers[1] === 'Title')
-  assert(headers[2] === 'Key')
+  assert(headers[2] === 'Key' || headers[2] === 'Key Text')
 
   const propertyNames = headers.slice(3)
 
@@ -23,7 +23,7 @@ export default tracklist => {
           title,
           artist,
           keyNumber: parseInt(key.slice(0, -1)),
-          isMinor: key[key.length - 1] === 'A',
+          isMinor: key[key.length - 1] === 'B' || key[key.length - 1] === 'd',
           properties: Object.fromEntries(propertyValues.map((value, i) => [propertyNames[i], value.match(/(\d+)$/)[1]]))
         }
       } catch (e) {

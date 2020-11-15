@@ -1,4 +1,4 @@
-export default `Artist	Title	Key	Energy
+export default `Artist	Title	Key	Comment
 Destroy	Inspected	11A	1
 9 To Ya Dome	EPROM	12A	6
 It Ain't Bangin'	dope	4A	6

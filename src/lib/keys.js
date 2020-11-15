@@ -9,4 +9,4 @@ export const findSuitableTracks = (current, tracks, useConservativeKeyTransition
 export const keyDistance = (useConservativeKeyTransitions) => (t1, t2) =>
   Math.abs(t1.keyNumber - t2.keyNumber) + (useConservativeKeyTransitions && t1.isMinor !== t2.isMinor ? 1 : 0)
 
-export const getKeyString = (keyNumber, isMinor) => `${keyNumber}${isMinor ? 'A' : 'B'}`
+export const getKeyString = (keyNumber, isMinor) => `${keyNumber}${isMinor ? 'B' : 'A'}`
