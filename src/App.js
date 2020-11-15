@@ -375,6 +375,7 @@ function App() {
                   <ButtonGroup color="primary" variant="contained">
                     {paths.map((path, i) => (
                       <Button
+                        key={i}
                         color={path === selectedPath ? 'secondary' : 'primary'}
                         onClick={() => setSelectedPath(path)}
                       >
