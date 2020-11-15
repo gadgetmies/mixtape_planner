@@ -9,9 +9,9 @@ export default tracklist => {
   if (rows.length === 0) return []
   const headers = rows[0]
   const validRows = rows.filter(r => r.length === headers.length)
-  assert(headers[0] === 'Artist')
-  assert(headers[1] === 'Title')
-  assert(headers[2] === 'Key' || headers[2] === 'Key Text')
+  assert(headers[0].toLowerCase() === 'artist')
+  assert(headers[1].toLowerCase() === 'title')
+  assert(headers[2].toLowerCase() === 'key' || headers[2] === 'key text')
 
   const propertyNames = headers.slice(3)
 
