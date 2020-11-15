@@ -21,7 +21,6 @@ import Input from '@material-ui/core/Input'
 import GithubCorner from 'react-github-corner'
 
 import { raisingSaw } from './lib/penalties'
-import Link from '@material-ui/core/Link'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import Switch from '@material-ui/core/Switch'
 
@@ -30,7 +29,7 @@ function App() {
   const [tracks, setTracks] = useState(parsePlaylist(tracklist))
   const [paths, setPaths] = useState([])
   const [selectedPath, setSelectedPath] = useState(undefined)
-  const [targetLength, setTargetLength] = useState(6)
+  const [targetLength, setTargetLength] = useState(7)
   const [timeout, setTimeout] = useState(2)
   const [tolerance, setTolerance] = useState(1.5)
   const [processing, setProcessing] = useState(false)
@@ -129,18 +128,16 @@ function App() {
             headers) into the field below. Then click the Parse button above and if everything goes well, you are ready
             to start generating interesting track combinations!
           </p>
-          <p>
-            <TextField
-              fullWidth={true}
-              rowsMax={20}
-              multiline
-              variant="outlined"
-              onChange={(e) => {
-                setTracklist(e.target.value)
-              }}
-              value={tracklist}
-            />
-          </p>
+          <TextField
+            fullWidth={true}
+            rowsMax={20}
+            multiline
+            variant="outlined"
+            onChange={(e) => {
+              setTracklist(e.target.value)
+            }}
+            value={tracklist}
+          />
         </>
       ) : (
         <>
@@ -197,143 +194,131 @@ function App() {
       {editingPlaylist ? null : (
         <>
           <h3>Number of tracks between first and last</h3>
-          <p>
-            <Slider
-              min={3}
-              max={30}
-              valueLabelDisplay="on"
-              value={targetLength - 2}
-              disabled={processing}
-              style={{marginTop: 20}}
-              onChange={(_, value) => {
-                setTargetLength(value + 2)
-                setParametersChanged(true)
-              }}
-            />
-          </p>
+          <Slider
+            min={3}
+            max={30}
+            valueLabelDisplay="on"
+            value={targetLength - 2}
+            disabled={processing}
+            style={{ marginTop: 20 }}
+            onChange={(_, value) => {
+              setTargetLength(value + 2)
+              setParametersChanged(true)
+            }}
+          />
           <h3>Target curve</h3>
-          <p>
-            <Select
-              value={targetFn.name}
-              disabled={processing}
-              onChange={(e) => {
-                setTargetFn(targetFunctions.find(R.propEq('name', e.target.value)))
-                setParametersChanged(true)
-              }}
-            >
-              {targetFunctions.map(({ name }) => (
-                <MenuItem value={name} key={name}>
-                  {name}
-                </MenuItem>
+          <Select
+            value={targetFn.name}
+            disabled={processing}
+            onChange={(e) => {
+              setTargetFn(targetFunctions.find(R.propEq('name', e.target.value)))
+              setParametersChanged(true)
+            }}
+          >
+            {targetFunctions.map(({ name }) => (
+              <MenuItem value={name} key={name}>
+                {name}
+              </MenuItem>
+            ))}
+          </Select>
+          {targetFn.name === 'Manual' ? (
+            <>
+              <h4>Values</h4>
+              {R.range(0, targetLength).map((i) => (
+                <>
+                  {i !== 0 && i % 10 === 0 ? <br /> : null}
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    style={{ width: 60, marginBottom: 10 }}
+                    label={(i + 1).toString()}
+                    key={i}
+                    value={targetValues[i].value}
+                    onChange={(e) => {
+                      targetValues[i].value = R.clamp(0, 10, parseInt(e.target.value) || 0)
+                      setTargetValues([...targetValues])
+                      setParametersChanged(true)
+                    }}
+                  />
+                </>
               ))}
-            </Select>
-            {targetFn.name === 'Manual' ? (
-              <>
-                <h4>Values</h4>
-                {R.range(0, targetLength).map((i) => (
-                  <>
-                    {i !== 0 && i % 10 === 0 ? <br /> : null}
-                    <TextField
-                      size="small"
-                      variant="outlined"
-                      style={{ width: 60, marginBottom: 10 }}
-                      label={(i + 1).toString()}
-                      key={i}
-                      value={targetValues[i].value}
-                      onChange={(e) => {
-                        targetValues[i].value = R.clamp(0, 10, parseInt(e.target.value) || 0)
-                        setTargetValues([...targetValues])
-                        setParametersChanged(true)
-                      }}
-                    />
-                  </>
-                ))}
-              </>
-            ) : null}
-            <Chart
-              options={{
-                chart: {
-                  id: 'apexchart-example',
-                },
-                xaxis: {
-                  categories: R.range(1, targetLength + 1),
-                },
-              }}
-              series={[
-                {
-                  name: 'energy target',
-                  data: getTargetValues(parameterRange, targetLength, targetFn.fn),
-                },
-              ]}
-              height="200"
-            />
-          </p>
-          <p>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showAdvancedOptions}
-                  onChange={() => {
-                    setShowAdvancedOptions(!showAdvancedOptions)
-                  }}
-                />
-              }
-              label="Show advanced options"
-            />
-          </p>
+            </>
+          ) : null}
+          <Chart
+            options={{
+              chart: {
+                id: 'apexchart-example',
+              },
+              xaxis: {
+                categories: R.range(1, targetLength + 1),
+              },
+            }}
+            series={[
+              {
+                name: 'energy target',
+                data: getTargetValues(parameterRange, targetLength, targetFn.fn),
+              },
+            ]}
+            height="200"
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showAdvancedOptions}
+                onChange={() => {
+                  setShowAdvancedOptions(!showAdvancedOptions)
+                }}
+              />
+            }
+            label="Show advanced options"
+          />
           {showAdvancedOptions ? (
             <>
               <h3>Processing timeout (minutes)</h3>
-              <p>
-                <Slider
-                  min={0.5}
-                  max={5}
-                  step={0.1}
-                  valueLabelDisplay="on"
-                  value={timeout}
-                  disabled={processing}
-                  onChange={(_, value) => {
-                    setTimeout(value)
-                    setParametersChanged(true)
-                  }}
-                />
-              </p>
+              <Slider
+                min={0.5}
+                max={5}
+                step={0.1}
+                valueLabelDisplay="on"
+                value={timeout}
+                disabled={processing}
+                onChange={(_, value) => {
+                  setTimeout(value)
+                  setParametersChanged(true)
+                }}
+              />
               <h4>Tolerance</h4>
-              <p>
-                <Slider
-                  min={0.0}
-                  max={3.0}
-                  step={0.1}
-                  valueLabelDisplay="on"
-                  value={tolerance}
-                  disabled={processing}
-                  onChange={(_, value) => {
-                    setTolerance(Number(value))
-                    setParametersChanged(true)
-                  }}
-                />
-              </p>
+              <Slider
+                min={0.0}
+                max={3.0}
+                step={0.1}
+                valueLabelDisplay="on"
+                value={tolerance}
+                disabled={processing}
+                onChange={(_, value) => {
+                  setTolerance(Number(value))
+                  setParametersChanged(true)
+                }}
+              />
               <h4>Seed</h4>
-              <p>
-                <Input
-                  size="small"
-                  value={seed}
-                  disabled={processing}
-                  onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
-                />
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="primary"
-                  disabled={processing}
-                  onClick={() => {
-                    setSeed(Math.round(Math.random() * 1000000))
-                    setParametersChanged(true)
-                  }}
-                >
-                  Generate seed
-                </Button>
-              </p>
+              <Input
+                size="small"
+                value={seed}
+                disabled={processing}
+                onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
+              />
+              <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                disabled={processing}
+                onClick={() => {
+                  setSeed(Math.round(Math.random() * 1000000))
+                  setParametersChanged(true)
+                }}
+              >
+                Generate seed
+              </Button>
             </>
           ) : null}
           <h2 id="result">Result</h2>
