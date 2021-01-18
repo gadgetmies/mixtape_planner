@@ -19,10 +19,18 @@ import MenuItem from '@material-ui/core/MenuItem'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import Input from '@material-ui/core/Input'
 import GithubCorner from 'react-github-corner'
+import { createMuiTheme } from '@material-ui/core/styles'
+import { ThemeProvider } from '@material-ui/styles'
 
 import { raisingSaw } from './lib/penalties'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import Switch from '@material-ui/core/Switch'
+
+const monospace = createMuiTheme({
+  typography: {
+    fontFamily: 'monospace',
+  },
+})
 
 function App() {
   const [tracklist, setTracklist] = useState(defaultTracklist)
@@ -129,16 +137,6 @@ function App() {
               headers) into the field below. Then click the Parse button above and if everything goes well, you are
               ready to start generating interesting track combinations!
             </p>
-            <TextField
-              fullWidth={true}
-              rowsMax={20}
-              multiline
-              variant="outlined"
-              onChange={(e) => {
-                setTracklist(e.target.value)
-              }}
-              value={tracklist}
-            />
           </>
         ) : (
           <>
@@ -192,6 +190,36 @@ function App() {
             <Tracklist tracks={R.without([intro, outro], tracks)} key="middle" />
           </>
         )}
+        <ThemeProvider theme={monospace}>
+          <TextField
+            fullWidth={true}
+            rowsMax={20}
+            multiline
+            display={editingPlaylist ? 'block' : 'none'}
+            variant="outlined"
+            onChange={(e) => {
+              setTracklist(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Tab') {
+                e.preventDefault()
+                const textArea = e.target
+                const start = textArea.selectionStart
+                const end = textArea.selectionEnd
+
+                textArea.value = textArea.value.substring(0, start) +
+                  '\t' + textArea.value.substring(end)
+
+                // put caret at right position again
+                textArea.selectionStart =
+                  textArea.selectionEnd = start + 1
+
+                setTracklist(textArea.value)
+              }
+            }}
+            value={tracklist}
+          />
+        </ThemeProvider>
         {editingPlaylist ? null : (
           <>
             <h3>Number of tracks between first and last</h3>
