@@ -147,11 +147,16 @@ function App() {
                   <br />
                   Export a playlist from Traktor as a web page. Include the Artist, Title, Key (or Key Text) and Comment
                   columns. The planner uses the Comment column as input for the mood (target curve). The column can
-                  contain other data as well, but it needs to end with a number. If you are using Mixed in Key, you can
-                  configure it to write the energy level to the comment tag (Settings > Update Tags > Where to write it
-                  > Overwrite comments). After exporting the playlist, open the web page and copy and paste the contents
-                  (including the headers) into the field below. Then click the Parse button above and if everything goes
-                  well, you are ready to start generating interesting track combinations!
+                  contain other data as well, but it needs to end with a number. If you are using{' '}
+                  <a href="https://mixedinkey.com">Mixed in Key</a>, you can configure it to write the energy level to
+                  the comment tag (Settings > Update Tags > Where to write it > Overwrite comments). If you do not have
+                  Mixed in Key, you can use a service like <a href="https://tunebat.com">Tunebat</a> to get the key and
+                  mood info.
+                  <br />
+                  <br />
+                  After exporting the playlist, open the web page and copy and paste the contents (including the
+                  headers) into the field below. Then click the Parse button above and if everything goes well, you are
+                  ready to start generating interesting track combinations!
                 </Typography>
               </AccordionDetails>
             </Accordion>
@@ -470,14 +475,20 @@ function App() {
                         <br />
                         Export a playlist from Traktor as a web page. Include the Artist, Title, Key (or Key Text) and
                         Comment columns. The planner uses the Comment column as input for the mood (target curve). The
-                        column can contain other data as well, but it needs to end with a number. If you are using Mixed
-                        in Key, you can configure it to write the energy level to the comment tag (Settings > Update
-                        Tags > Where to write it > Overwrite comments). After exporting the playlist, open the web page
-                        and copy and paste the contents (including the headers) into the field below. Then click the
-                        Done button above and if everything goes well, the graphs should update!
+                        column can contain other data as well, but it needs to end with a number. If you are using{' '}
+                        <a href="https://mixedinkey.com">Mixed in Key</a>, you can configure it to write the energy
+                        level to the comment tag (Settings > Update Tags > Where to write it > Overwrite comments). If
+                        you do not have Mixed in Key, you can use a service like{' '}
+                        <a href="https://tunebat.com">Tunebat</a> to get the key and mood info.
+                        <br />
+                        <br />
+                        After exporting the playlist, open the web page and copy and paste the contents (including the
+                        headers) into the field below. Then click the Done button above and if everything goes well, the
+                        graphs should update!
                       </Typography>
                     </AccordionDetails>
-                  </Accordion><br/>
+                  </Accordion>
+                  <br />
                   <TextField
                     fullWidth={true}
                     rowsMax={20}
@@ -542,7 +553,7 @@ function App() {
                     {
                       name: 'Value',
                       data: selectedPath.path.map(firstPropertyValue),
-                    }
+                    },
                   ]}
                   height="200"
                 />
