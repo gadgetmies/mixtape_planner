@@ -89,6 +89,36 @@ function App() {
     getTargetValues(parameterRange, targetLength, targetFn.fn)
   )
 
+  const TracklistInstructions = (props) => (
+    <Accordion>
+      <AccordionSummary
+        expandIcon={<InfoIcon color={'primary'} />}
+        aria-label="Expand"
+        aria-controls="additional-actions1-content"
+        id="additional-actions1-header"
+      >
+        Instructions
+      </AccordionSummary>
+      <AccordionDetails>
+        <Typography>
+          The planner is rather picky about the input it gets currently (a TSV formatted text with Artist, Title, Key
+          and Comment columns). In order to produce such a file do the following:
+          <br />
+          <br />
+          Export a playlist from Traktor as a web page. Include the Artist, Title, Key (or Key Text) and Comment
+          columns. The planner uses the Comment column as input for the mood (target curve). The column can contain
+          other data as well, but it needs to end with a number. If you are using{' '}
+          <a href="https://mixedinkey.com">Mixed in Key</a>, you can configure it to write the energy level to the
+          comment tag (Settings > Update Tags > Where to write it > Overwrite comments). If you do not have Mixed in
+          Key, you can use a service like <a href="https://tunebat.com">Tunebat</a> to get the key and mood info.
+          <br />
+          <br />
+          {props.children}
+        </Typography>
+      </AccordionDetails>
+    </Accordion>
+  )
+
   return (
     <>
       <Container maxWidth="md">
@@ -133,36 +163,11 @@ function App() {
         </h3>
         {editingPlaylist ? (
           <>
-            <Accordion>
-              <AccordionSummary
-                expandIcon={<InfoIcon color={'primary'} />}
-                aria-label="Expand"
-                aria-controls="additional-actions1-content"
-                id="additional-actions1-header"
-              >
-                Instructions
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography>
-                  The planner is rather picky about the input it gets currently (a TSV formatted text with Artist,
-                  Title, Key and Comment columns). In order to produce such a file do the following:
-                  <br />
-                  <br />
-                  Export a playlist from Traktor as a web page. Include the Artist, Title, Key (or Key Text) and Comment
-                  columns. The planner uses the Comment column as input for the mood (target curve). The column can
-                  contain other data as well, but it needs to end with a number. If you are using{' '}
-                  <a href="https://mixedinkey.com">Mixed in Key</a>, you can configure it to write the energy level to
-                  the comment tag (Settings > Update Tags > Where to write it > Overwrite comments). If you do not have
-                  Mixed in Key, you can use a service like <a href="https://tunebat.com">Tunebat</a> to get the key and
-                  mood info.
-                  <br />
-                  <br />
-                  After exporting the playlist, open the web page and copy and paste the contents (including the
-                  headers) into the field below. Then click the Parse button above and if everything goes well, you are
-                  ready to start generating interesting track combinations!
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
+            <TracklistInstructions>
+              After exporting the playlist, open the web page and copy and paste the contents (including the headers)
+              into the field below. Then click the Parse button above and if everything goes well, you are ready to
+              start generating interesting track combinations!
+            </TracklistInstructions>
             <br />
           </>
         ) : (
@@ -461,36 +466,11 @@ function App() {
                 <Tracklist tracks={selectedPath.path} />
               ) : (
                 <>
-                  <Accordion>
-                    <AccordionSummary
-                      expandIcon={<InfoIcon color={'primary'} />}
-                      aria-label="Expand"
-                      aria-controls="additional-actions1-content"
-                      id="additional-actions1-header"
-                    >
-                      Instructions
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography>
-                        The planner is rather picky about the input it gets currently (a TSV formatted text with Artist,
-                        Title, Key and Comment columns). In order to produce such a file do the following:
-                        <br />
-                        <br />
-                        Export a playlist from Traktor as a web page. Include the Artist, Title, Key (or Key Text) and
-                        Comment columns. The planner uses the Comment column as input for the mood (target curve). The
-                        column can contain other data as well, but it needs to end with a number. If you are using{' '}
-                        <a href="https://mixedinkey.com">Mixed in Key</a>, you can configure it to write the energy
-                        level to the comment tag (Settings > Update Tags > Where to write it > Overwrite comments). If
-                        you do not have Mixed in Key, you can use a service like{' '}
-                        <a href="https://tunebat.com">Tunebat</a> to get the key and mood info.
-                        <br />
-                        <br />
-                        After exporting the playlist, open the web page and copy and paste the contents (including the
-                        headers) into the field below. Then click the Done button above and if everything goes well, the
-                        graphs should update!
-                      </Typography>
-                    </AccordionDetails>
-                  </Accordion>
+                  <TracklistInstructions>
+                    After exporting the playlist, open the web page and copy and paste the contents (including the
+                    headers) into the field below. Then click the Done button above and if everything goes well, the
+                    graphs should update!
+                  </TracklistInstructions>
                   <br />
                   <TextField
                     fullWidth={true}
