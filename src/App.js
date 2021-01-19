@@ -31,6 +31,9 @@ import { raisingSaw } from './lib/penalties'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import Switch from '@material-ui/core/Switch'
 
+const truncate = (length) => (input) => (input.length > length ? `${input.substring(0, length)}...` : input)
+const truncateTitle = truncate(10)
+
 function App() {
   const [tracklist, setTracklist] = useState(defaultPlaylist)
   const [tracks, setTracks] = useState(parsePlaylist(tracklist))
@@ -542,7 +545,15 @@ function App() {
                       id: 'apexchart-example',
                     },
                     xaxis: {
-                      categories: R.range(1, targetLength + 1),
+                      categories: selectedPath.path.map((pathItem) => truncateTitle(pathItem.title)),
+                      name: 'Track',
+                    },
+                    yaxis: {
+                      labels: {
+                        formatter: function (val) {
+                          return Math.floor(val)
+                        },
+                      },
                     },
                   }}
                   series={[
@@ -551,7 +562,7 @@ function App() {
                       data: cachedTargetValues,
                     },
                     {
-                      name: 'Value',
+                      name: 'Actual',
                       data: selectedPath.path.map(firstPropertyValue),
                     },
                   ]}
@@ -564,7 +575,7 @@ function App() {
                       id: 'apexchart-example',
                     },
                     xaxis: {
-                      categories: R.range(1, targetLength + 1),
+                      categories: selectedPath.path.map((pathItem) => truncateTitle(pathItem.title)),
                     },
                   }}
                   series={[
