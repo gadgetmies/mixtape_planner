@@ -1,12 +1,35 @@
 import * as R from 'ramda'
 
 import { limits, normalize } from './arrayHelppers'
-import { findSuitableTracks, keyDistance } from './keys'
+import { findSuitableTracksByKey, keyDistance } from './keys'
 import { promiseOrTimeout } from './promiseHelpers'
 import { penaltyFn } from './penalties'
 import * as seedrandom from 'seedrandom'
 
-export const graphWalk = async ({ tracks, intro, outro, targetLength, penalties, tolerance, seed, timeout = 0.5 }) => {
+export const graphWalk = async ({
+  tracks,
+  intro,
+  outro,
+  targetLength,
+  penalties,
+  tolerance,
+  maxTempoDifference,
+  seed,
+  filterByPenalty = true,
+  timeout = 0.5,
+}) => {
+  console.log({
+    tracks,
+    intro,
+    outro,
+    targetLength,
+    penalties,
+    tolerance,
+    maxTempoDifference,
+    seed,
+    filterByPenalty,
+    timeout,
+  })
   const minAndMaxValuesForPenalties = Object.fromEntries(
     Object.keys(penalties).map((key) => {
       const values = R.map(R.path(['properties', key]), tracks)
@@ -31,6 +54,12 @@ export const graphWalk = async ({ tracks, intro, outro, targetLength, penalties,
     return R.sum(mapped)
   }
 
+  const calculateTempoDifference = (t1, t2) => {
+    const normalDiff = Math.abs(1 - Math.min(t1.tempo, t2.tempo) / Math.max(t1.tempo, t2.tempo))
+    const scaledDiff = Math.abs(1 - (Math.min(t1.tempo, t2.tempo) * 2) / Math.max(t1.tempo, t2.tempo))
+    return Math.min(normalDiff, scaledDiff) * 100
+  }
+
   let routes = []
   let bestRoute = {
     path: [],
@@ -42,12 +71,12 @@ export const graphWalk = async ({ tracks, intro, outro, targetLength, penalties,
       setImmediate(async () => {
         const penalty = calculatePenalty(node.currentLength, node.track)
         const currentPenalty = node.currentPenalty + penalty
-        const atTargetLength = node.currentLength === targetLength - 2
+        const atTargetLength = node.currentLength === targetLength - (outro === undefined ? 1 : 2)
         const suitableTracks = atTargetLength
           ? undefined
-          : findSuitableTracks(node.track, tracksLeft).filter(
-              (t) => calculatePenalty(node.currentLength + 1, t) < tolerance
-            )
+          : findSuitableTracksByKey(node.track, tracksLeft)
+              .filter((t) => calculateTempoDifference(node.track, t) < maxTempoDifference)
+              .filter((t) => !filterByPenalty || calculatePenalty(node.currentLength + 1, t) < tolerance)
 
         if (atTargetLength) {
           if (currentPenalty < bestRoute.penalty) {
@@ -58,9 +87,10 @@ export const graphWalk = async ({ tracks, intro, outro, targetLength, penalties,
               currentNode = currentNode.previous
             }
 
+            let reversedPath = R.reverse(path)
             bestRoute = {
               penalty: currentPenalty,
-              path: [...R.reverse(path), outro],
+              path: outro === undefined ? reversedPath : [...reversedPath, outro],
             }
 
             routes.splice(0, 0, bestRoute)
@@ -69,13 +99,14 @@ export const graphWalk = async ({ tracks, intro, outro, targetLength, penalties,
           }
         }
 
-        const tooFarFromOutro = keyDistance(false)(node.track, outro) > targetLength - node.currentLength - 3
+        const tooFarFromOutro =
+          outro !== undefined && keyDistance(false)(node.track, outro) > targetLength - node.currentLength - 3
 
         if (
           tooFarFromOutro ||
           atTargetLength ||
           suitableTracks.length === 0 ||
-          node.currentPenalty > bestRoute.penalty
+          (filterByPenalty && node.currentPenalty > bestRoute.penalty)
         ) {
           return accept()
         }

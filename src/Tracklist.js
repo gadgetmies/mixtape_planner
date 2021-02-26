@@ -31,6 +31,7 @@ export default function Tracklist({ tracks, editing, selectedTrackIndex, onTrack
               {editing ? <TableCell>Select</TableCell> : null}
               <TableCell>Artist</TableCell>
               <TableCell>Title</TableCell>
+              <TableCell>Tempo</TableCell>
               <TableCell>Key</TableCell>
               {tracks[0]
                 ? Object.keys(tracks[0].properties).map((propertyName, i) => (
@@ -49,6 +50,7 @@ export default function Tracklist({ tracks, editing, selectedTrackIndex, onTrack
                 ) : null}
                 <TableCell>{track.artist}</TableCell>
                 <TableCell>{track.title}</TableCell>
+                <TableCell>{parseInt(track.tempo)}</TableCell>
                 <TableCell>{getKeyString(track.keyNumber, track.isMinor)}</TableCell>
                 {Object.values(track.properties).map((property) => (
                   <TableCell key="property">{property}</TableCell>

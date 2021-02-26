@@ -18,7 +18,7 @@ const firstPropertyValue = (track) => R.path([1], firstProperty(track))
 export default () => {
   const [params, setParams] = useUrlSearchParams({ tracklist: '' })
   if (params.tracklist.indexOf('Artist') === -1) {
-    setParams({ tracklist: 'Artist\tTitle\tKey\tComment\n' + params.tracklist })
+    setParams({ tracklist: 'Artist\tTitle\tTempo\tKey\tComment\n' + params.tracklist })
   }
   const [parsedTracklist, setParsedTracklist] = useState(parsePlaylist(params.tracklist))
 

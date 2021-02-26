@@ -1036,6 +1036,11 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
+"@bity/oauth2-auth-code-pkce@^2.12.0":
+  version "2.12.0"
+  resolved "https://registry.yarnpkg.com/@bity/oauth2-auth-code-pkce/-/oauth2-auth-code-pkce-2.12.0.tgz#cd8c12f0becf3d3917728a61d3c6c3a929f93da3"
+  integrity sha512-6+wvjr+MMo4Ku59T5o07bSjn1JCePsKl6nwd4/Da797JGgpxpjzf/VwSK1SNERA82HwE7Ka/8vMyujIYqZ2gig==
+
 "@cnakazawa/watch@^1.0.3":
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/@cnakazawa/watch/-/watch-1.0.4.tgz#f864ae85004d0fcab6f50be9141c4da368d1656a"
@@ -10404,6 +10409,11 @@ split-string@^3.0.1, split-string@^3.0.2:
   integrity sha512-NzNVhJDYpwceVVii8/Hu6DKfD2G+NrQHlS/V/qgv763EYudVwEcMQNxd2lh+0VrUByXN/oJkl5grOhYWvQUYiw==
   dependencies:
     extend-shallow "^3.0.0"
+
+spotify-web-api-js@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/spotify-web-api-js/-/spotify-web-api-js-1.5.1.tgz#dcdd80f3975cd79c1c1278c56b2071453b190699"
+  integrity sha512-KyeYpfPY5bWc5geb0Lmw96oqydxrby36vkmN33q4xrY7oWwoz3634Ya7qHndq2eOqCfI1GS3a5CjimYe7RQdtg==
 
 sprintf-js@~1.0.2:
   version "1.0.3"

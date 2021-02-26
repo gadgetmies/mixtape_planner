@@ -11,17 +11,19 @@ export default (list) => {
   const validRows = rows.filter((r) => r.length === headers.length)
   assert(headers[0].toLowerCase() === 'artist')
   assert(headers[1].toLowerCase() === 'title')
-  assert(headers[2].toLowerCase() === 'key' || headers[2] === 'key text')
+  assert(headers[2].toLowerCase() === 'tempo')
+  assert(headers[3].toLowerCase() === 'key' || headers[2] === 'key text')
 
-  const propertyNames = headers.slice(3)
+  const propertyNames = headers.slice(4)
 
-  return validRows.slice(1).map(([artist, title, key, ...propertyValues]) => {
+  return validRows.slice(1).map(([artist, title, tempo, key, ...propertyValues]) => {
     try {
       return {
         title,
         artist,
         keyNumber: parseInt(key.slice(0, -1)),
         isMinor: key[key.length - 1] === 'B' || key[key.length - 1] === 'd',
+        tempo: parseInt(tempo),
         properties: Object.fromEntries(propertyValues.map((value, i) => [propertyNames[i], value.match(/(\d+)$/)[1]])),
       }
     } catch (e) {

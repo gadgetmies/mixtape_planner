@@ -1,5 +1,5 @@
 import * as R from 'ramda'
-import { findSuitableTracks } from './keys'
+import { findSuitableTracksByKey } from './keys'
 import { penaltyFn } from './penalties'
 
 export const randomWalk = ({ tracks, intros, targetLength, energyFunction, popularityFunction }) => {
@@ -11,7 +11,7 @@ export const randomWalk = ({ tracks, intros, targetLength, energyFunction, popul
   const popularityPenaltyFn = penaltyFn(popularityFunction)
 
   const findSuitableTrack = (current, tracks) => {
-    const suitable = findSuitableTracks(current, tracks)
+    const suitable = findSuitableTracksByKey(current, tracks)
     if (suitable.length === 0) return undefined
     return suitable[Math.round(Math.random() * (suitable.length - 1))]
   }
