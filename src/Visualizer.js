@@ -66,6 +66,7 @@ const Visualizer = () => {
           <FacebookIcon round={true} style={{ padding: '5px' }} />
         </FacebookShareButton>
 
+        <h3>{parsedTracklist && parsedTracklist.length > 1 && Object.keys(parsedTracklist[0].properties)[0]}</h3>
         <Chart
           options={{
             chart: {
