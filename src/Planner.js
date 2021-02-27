@@ -29,16 +29,16 @@ import defaultPlaylist from './test/playlist'
 import parsePlaylist from './lib/parseTracklist'
 import defaultTracklist from './test/tracklist'
 import { absoluteSine, raisingSaw, saw } from './lib/penalties'
-import { limits, normalize } from './lib/arrayHelppers'
+import { getPropertyLimits, limits, normalize } from './lib/arrayHelppers'
 import pathToTSV from './lib/pathToTSV'
 import TracklistInstructions from './TracklistInstructions'
 import pitchClassToCamelotKeyNumber from './lib/pitchClassToCamelotKeyNumber'
 
 const minimumTrackCountForPenalties = 50
 
-const firstProperty = (track) => R.path([0], Object.entries(track.properties))
-const firstPropertyName = (track) => R.path([0], firstProperty(track))
-const firstPropertyValue = (track) => R.path([1], firstProperty(track))
+const getFirstProperty = (track) => R.path([0], Object.entries(track.properties))
+const getFirstPropertyName = (track) => R.path([0], getFirstProperty(track))
+const getFirstPropertyValue = (track) => R.path([1], getFirstProperty(track))
 const getTargetValues = ({ min, max }, targetLength, fn) => {
   return normalize(min, max)(R.range(0, targetLength).map((i) => fn(i)))
 }
@@ -87,7 +87,7 @@ const Planner = () => {
   const [processingMessage, setProcessingMessage] = useState('')
   const [editingSelectedTracklistResult, setEditingSelectedTracklistResult] = useState(false)
   const [selectedTracklist, setSelectedTracklist] = useState(defaultTracklist)
-  const parameterRange = limits(R.map(firstPropertyValue, tracks))
+  const [parameterRange, setParameterRange] = useState(limits(R.map(getFirstPropertyValue, tracks)))
   const targetFunctions = [
     {
       name: 'Raising Saw',
@@ -106,6 +106,8 @@ const Planner = () => {
       fn: (i) => targetValues[i].value,
     },
   ]
+  const [targetProperty, setTargetProperty] = useState(getFirstPropertyName(tracks[0]))
+  const [targetProperties, setTargetProperties] = useState(Object.keys(tracks[0].properties))
   const [targetFn, setTargetFunction] = useState(targetFunctions[0])
   const [cachedTargetValues, setCachedTargetValues] = useState(
     getTargetValues(parameterRange, targetLength, targetFn.fn)
@@ -185,12 +187,20 @@ const Planner = () => {
           tempo: features.tempo,
           properties: {
             Energy: Math.round(features.energy * 10),
+            Danceability: Math.round(features.danceability * 10),
+            Valence: Math.round(features.valence * 10),
+            Instrumentalness: Math.round(features.instrumentalness * 10),
+            Popularity: Math.round(popularity / 10),
           },
         }),
         tracksFromPlaylist,
         features.audio_features
       )
       setTracks(parsedPlaylist)
+      const firstPropertyName = getFirstPropertyName(parsedPlaylist[0])
+      setTargetProperty(firstPropertyName)
+      setTargetProperties(Object.keys(parsedPlaylist[0].properties))
+      setParameterRange(getPropertyLimits(firstPropertyName, parsedPlaylist))
 
       setEditingPlaylist(false)
       setParametersChanged(true)
@@ -421,6 +431,22 @@ const Planner = () => {
             setCachedTargetValues(getTargetValues(parameterRange, targetLength, targetFn.fn))
           }}
         />
+        <h3>Target property</h3>
+        <Select
+          value={targetProperty}
+          onChange={(e) => {
+            const targetPropertyName = e.target.value
+            setTargetProperty(targetPropertyName)
+            setParameterRange(getPropertyLimits(targetPropertyName, tracks))
+            setParametersChanged(true)
+          }}
+        >
+          {targetProperties.map((property) => (
+            <MenuItem value={property} key={property}>
+              {property}
+            </MenuItem>
+          ))}
+        </Select>
         <h3>Target curve</h3>
         <Select
           value={targetFn.name}
@@ -472,7 +498,7 @@ const Planner = () => {
           }}
           series={[
             {
-              name: 'energy target',
+              name: `${targetProperty} target`,
               data: getTargetValues(
                 targetFn.name === 'Manual' ? limits(R.pluck('value', targetValues)) : parameterRange,
                 targetLength,
@@ -596,7 +622,7 @@ const Planner = () => {
                 useConservativeKeyTransitions,
                 timeout,
                 seed,
-                penalties: { [firstPropertyName(tracks[0])]: { weight: 1, fn: targetFn.fn } },
+                penalties: { [targetProperty]: { weight: 1, fn: targetFn.fn } },
               })
 
               setCachedTargetValues(getTargetValues(parameterRange, targetLength, targetFn.fn))
@@ -745,7 +771,7 @@ const Planner = () => {
                     },
                     {
                       name: 'Actual',
-                      data: selectedPath.path.map(firstPropertyValue),
+                      data: selectedPath.path.map(R.path(['properties', targetProperty])),
                     },
                   ]}
                   height="200"
