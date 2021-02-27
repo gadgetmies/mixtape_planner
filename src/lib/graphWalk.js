@@ -14,6 +14,7 @@ export const graphWalk = async ({
   penalties,
   tolerance,
   maxTempoDifference,
+  useConservativeKeyTransitions,
   seed,
   filterByPenalty = true,
   timeout = 0.5,
@@ -26,6 +27,7 @@ export const graphWalk = async ({
     penalties,
     tolerance,
     maxTempoDifference,
+    useConservativeKeyTransitions,
     seed,
     filterByPenalty,
     timeout,
@@ -74,7 +76,7 @@ export const graphWalk = async ({
         const atTargetLength = node.currentLength === targetLength - (outro === undefined ? 1 : 2)
         const suitableTracks = atTargetLength
           ? undefined
-          : findSuitableTracksByKey(node.track, tracksLeft)
+          : findSuitableTracksByKey(node.track, tracksLeft, useConservativeKeyTransitions)
               .filter((t) => calculateTempoDifference(node.track, t) < maxTempoDifference)
               .filter((t) => !filterByPenalty || calculatePenalty(node.currentLength + 1, t) < tolerance)
 

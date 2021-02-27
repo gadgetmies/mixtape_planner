@@ -70,6 +70,7 @@ const Planner = () => {
   const [targetLength, setTargetLength] = useState(5)
   const [timeout, setTimeout] = useState(2)
   const [tolerance, setTolerance] = useState(1.5)
+  const [useConservativeKeyTransitions, setUseConservativeKeyTransitions] = useState(false)
   const [maxTempoDifference, setMaxTempoDifference] = useState(5)
   const [processing, setProcessing] = useState(false)
   const [editingPlaylist, setEditingPlaylist] = useState(false)
@@ -494,6 +495,19 @@ const Planner = () => {
         />
         {showAdvancedOptions ? (
           <>
+            <h3>Key transitions</h3>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={!useConservativeKeyTransitions}
+                  onChange={() => {
+                    setUseConservativeKeyTransitions(!useConservativeKeyTransitions)
+                    setParametersChanged(true)
+                  }}
+                />
+              }
+              label="Use diagonal key transitions (i.e. e.g. 1A→2B)"
+            />
             <h3>Processing timeout (minutes)</h3>
             <Slider
               min={0.5}
@@ -579,6 +593,7 @@ const Planner = () => {
                 tolerance,
                 maxTempoDifference,
                 filterByPenalty: tracks.length > minimumTrackCountForPenalties,
+                useConservativeKeyTransitions,
                 timeout,
                 seed,
                 penalties: { [firstPropertyName(tracks[0])]: { weight: 1, fn: targetFn.fn } },
