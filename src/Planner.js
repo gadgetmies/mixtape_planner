@@ -572,7 +572,7 @@ const Planner = () => {
                 <h4>Tolerance (use bigger values if smaller do not yield results)</h4>
                 <Slider
                   min={0.0}
-                  max={5.0}
+                  max={6.0}
                   step={0.1}
                   valueLabelDisplay="on"
                   value={tolerance}
