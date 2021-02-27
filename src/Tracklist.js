@@ -53,7 +53,7 @@ export default function Tracklist({ tracks, editing, selectedTrackIndex, onTrack
                 <TableCell>{parseInt(track.tempo)}</TableCell>
                 <TableCell>{getKeyString(track.keyNumber, track.isMinor)}</TableCell>
                 {Object.values(track.properties).map((property) => (
-                  <TableCell key="property">{property}</TableCell>
+                  <TableCell key={property}>{property}</TableCell>
                 ))}
               </TableRow>
             ))}
