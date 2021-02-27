@@ -120,8 +120,20 @@ const Planner = () => {
   const initializeAndOpenSpotifyPlaylistDialog = async (accessToken) => {
     spotify = new SpotifyWebApi()
     spotify.setAccessToken(accessToken.token.value)
-    const playlists = await spotify.getUserPlaylists()
-    setSpotifyPlaylistItems(playlists.items.map(({ name, id }) => ({ id, name })))
+
+    let playlists = []
+    let offset = 0
+    let total
+    do {
+      const response = await spotify.getUserPlaylists({ offset })
+      playlists = playlists.concat(
+        response.items.filter(({ tracks: { total } }) => total > 0).map(({ name, id }) => ({ id, name }))
+      )
+      total = response.total
+      offset += response.limit
+    } while (offset < total)
+
+    setSpotifyPlaylistItems(playlists)
 
     setPlaylistDialogOpen(true)
   }
