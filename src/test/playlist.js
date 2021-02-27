@@ -1,4 +1,4 @@
-export default `Artist\tTitle\tTempo\tKey\tComment
+const playlist = `Artist\tTitle\tTempo\tKey\tComment
 Inspected\tDestroy\t174\t11A\t1
 EPROM\t9 To Ya Dome\t174\t12A\t6
 dope\tIt Ain't Bangin'\t174\t4A\t6
@@ -201,3 +201,4 @@ Balatron\tActively Faded (Original Mix)\t174\t9A\t5
 TorbjÃ¸rn\tMan's Got Game (Sigrah Remix)\t174\t12A\t8
 Mefjus\tAssembler (Original Mix)\t174\t7A\t10
 `
+export default playlist

@@ -62,7 +62,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export default () => {
+const Planner = () => {
   const [tracklist, setTracklist] = useState(defaultPlaylist)
   const [tracks, setTracks] = useState(parsePlaylist(tracklist))
   const [paths, setPaths] = useState([])
@@ -762,3 +762,5 @@ export default () => {
     </>
   )
 }
+
+export default Planner

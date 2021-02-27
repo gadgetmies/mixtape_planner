@@ -5,7 +5,7 @@ import AccordionDetails from '@material-ui/core/AccordionDetails'
 import Typography from '@material-ui/core/Typography'
 import React from 'react'
 
-export default (props) => (
+const TracklistInstructions = (props) => (
   <Accordion>
     <AccordionSummary
       expandIcon={<InfoIcon color={'primary'} />}
@@ -34,3 +34,4 @@ export default (props) => (
     </AccordionDetails>
   </Accordion>
 )
+export default TracklistInstructions

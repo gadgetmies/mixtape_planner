@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-export default (list) => {
+const parseTracklist = (list) => {
   const rows = list
     .trim()
     .split('\n')
@@ -28,6 +28,8 @@ export default (list) => {
       }
     } catch (e) {
       console.error(`Error processing row: ${title} ${artist} ${key} ${propertyValues}`)
+      throw e
     }
   })
 }
+export default parseTracklist

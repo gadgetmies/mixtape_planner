@@ -1,5 +1,5 @@
 import GithubCorner from 'react-github-corner'
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { useUrlSearchParams } from 'use-url-search-params'
 import TextField from '@material-ui/core/TextField'
 import parsePlaylist from './lib/parseTracklist'
@@ -15,7 +15,7 @@ const truncateTitle = truncate(10)
 const firstProperty = (track) => R.path([0], Object.entries(track.properties))
 const firstPropertyValue = (track) => R.path([1], firstProperty(track))
 
-export default () => {
+const Visualizer = () => {
   const [params, setParams] = useUrlSearchParams({ tracklist: '' })
   if (params.tracklist.indexOf('Artist') === -1) {
     setParams({ tracklist: 'Artist\tTitle\tTempo\tKey\tComment\n' + params.tracklist })
@@ -114,3 +114,4 @@ export default () => {
     </>
   )
 }
+export default Visualizer
