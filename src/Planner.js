@@ -69,7 +69,7 @@ const Planner = () => {
   const [selectedPath, setSelectedPath] = useState({ penalty: undefined, path: parsePlaylist(defaultTracklist) })
   const [targetLength, setTargetLength] = useState(5)
   const [timeout, setTimeout] = useState(2)
-  const [tolerance, setTolerance] = useState(1.5)
+  const [tolerance, setTolerance] = useState(3)
   const [useConservativeKeyTransitions, setUseConservativeKeyTransitions] = useState(false)
   const [maxTempoDifference, setMaxTempoDifference] = useState(5)
   const [processing, setProcessing] = useState(false)
