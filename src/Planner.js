@@ -163,7 +163,9 @@ const Planner = () => {
         .then((hasAuthCode) => {
           if (!hasAuthCode) {
             console.log('Something wrong...no auth code.')
+            return
           }
+          window.history.replaceState({}, document.title, window.location.href.split('?')[0])
           return oauth.getAccessToken().then((token) => initializeAndOpenSpotifyPlaylistDialog(token))
         })
         .catch((potentialError) => {
