@@ -240,13 +240,8 @@ const Planner = () => {
           put in between them? This is just the right tool for the job!
         </p>
         <p>
-          Start by dropping a list of tracks below, selecing the track to start from, the track to end up at and the
-          mood you are after. Let the planner work its magic and prepare to be amazed by the combinations it spits out!
-        </p>
-        <p>
-          If giving the task of generating tracklists to a computer feels uncanny, you can use the tool for only
-          visualising your plans by heading over to the <a href="#result">Result section</a> and dropping your tracks
-          there instead!
+          Start by dropping a list of tracks below, selecing the track to start from and the mood you are after. Let the
+          planner work its magic and prepare to be amazed and inspired by the combinations it spits out!
         </p>
         <h2>Parameters</h2>
         <h3>Playlist</h3>
@@ -574,7 +569,7 @@ const Planner = () => {
             />
             {tracks.length < minimumTrackCountForPenalties ? null : (
               <>
-                <h4>Tolerance (use bigger value if smaller do not give results)</h4>
+                <h4>Tolerance (use bigger values if smaller do not yield results)</h4>
                 <Slider
                   min={0.0}
                   max={5.0}
@@ -649,7 +644,9 @@ const Planner = () => {
               setEditingSelectedTracklistResult(false)
 
               setProcessingMessage(
-                paths.length === 0 ? 'No suitable orders found. Try increasing processing timeout or tolerance' : ''
+                paths.length === 0
+                  ? 'No suitable orders found. Try increasing processing timeout or tolerance in the advanced options.'
+                  : ''
               )
             }}
           >
