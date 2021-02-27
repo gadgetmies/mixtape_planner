@@ -34,7 +34,7 @@ import pathToTSV from './lib/pathToTSV'
 import TracklistInstructions from './TracklistInstructions'
 import pitchClassToCamelotKeyNumber from './lib/pitchClassToCamelotKeyNumber'
 
-const minimumTrackCountForPenalties = 50
+const minimumTrackCountForPenalties = 80
 
 const getFirstProperty = (track) => R.path([0], Object.entries(track.properties))
 const getFirstPropertyName = (track) => R.path([0], getFirstProperty(track))
