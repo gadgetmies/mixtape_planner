@@ -130,7 +130,7 @@ const Planner = () => {
         tokenUrl: `https://accounts.spotify.com/api/token`,
         clientId: '01726eb65f8f4f28a640d74bd65deab1',
         scopes: ['playlist-read-private'],
-        redirectUrl: 'http://localhost:3000', // TODO: get from process.env?
+        redirectUrl: process.env.REACT_APP_REDIRECT_URL || 'http://localhost:3000',
         onAccessTokenExpiry(refreshAccessToken) {
           console.log('Expired! Access token needs to be renewed.')
           // alert('We will try to get a new access token via grant code or refresh token.')
