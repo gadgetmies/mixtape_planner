@@ -1,4 +1,10 @@
 
+# Harmonic mixtape / track combo planner
+
+A web app that orders tracks from a tracklist into a sequence of harmonically compatible transitions while taking also other parameters, such as the energy level of the tracks, into account.
+
+Give the app a go: https://gadgetmies.github.io/mixtape_planner/
+
 # Create React App Stuff below
 
 # Getting Started with Create React App
