@@ -5,6 +5,8 @@ A web app that orders tracks from a tracklist into a sequence of harmonically co
 
 Give the app a go: https://gadgetmies.github.io/mixtape_planner/
 
+![Screenshot](./screenshot.png)
+
 # Create React App Stuff below
 
 # Getting Started with Create React App
